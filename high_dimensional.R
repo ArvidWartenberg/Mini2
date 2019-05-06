@@ -68,8 +68,6 @@ test  = load_image_file("t10k-images-idx3-ubyte")
 train$y = as.factor(load_label_file("train-labels-idx1-ubyte"))
 test$y  = as.factor(load_label_file("t10k-labels-idx1-ubyte"))
 
-# view test image
-show_digit(train[10000, ])
 
 # Choosing training data
 train_data <- as_tibble(train) %>%
@@ -92,8 +90,17 @@ names(colors) = unique(train_data$y)
 tsne <- Rtsne(train_data[,], dims = 2, check_duplicates = FALSE, verbose=TRUE, max_iter = 500, partial_pca=TRUE)
 
 
-plot(tsne$Y, t='n', main="tsne")
-text(tsne$Y, labels=train_data$y, col=colors[train_data$y])
+
+
+data <- data.frame(tsne$Y, train_data$y)
+
+
+ggplot(data, aes(x = X1, y = X2, color = colors[train_data$y], label =train_data$y)) + 
+geom_text() +
+ggtitle("Result after TSNE") +
+theme(legend.position = "none", plot.title = element_text(hjust = 0.5))
+
+
 
 
 cl <- dbscan(tsne$Y, eps = 0.5 ,minPts = 5)
@@ -101,9 +108,12 @@ cl <- dbscan(tsne$Y, eps = 0.5 ,minPts = 5)
 cbp1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
           "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-
-ggplot(train_data$y, aes(x = tsne$Y[,1], y = tsne$Y[,2], color = cl$cluster)) + 
-  geom_point(size = 2) +  
-  scale_colour_manual(values=cbp1)
+dominant_classes_idx <- which(cl$cluster %in% c(1,2,3))
+labels <- as.factor(cl$cluster[dominant_classes_idx])
+data <- data.frame(labels, x= tsne$Y[dominant_classes_idx,1], y = tsne$Y[dominant_classes_idx,2]) 
+ggplot(data, aes(x = x, y = y, color = labels)) +
+ggtitle("classes after DBSCAN") +
+geom_point() +
+theme(legend.position = "none", plot.title = element_text(hjust = 0.5))
 
 

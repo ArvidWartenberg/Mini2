@@ -1,4 +1,7 @@
 library(ggplot2)
+library(RColorBrewer)
+library(MASS)
+library(dbscan)
 
 brewer.pal(n = 4, name = "PRGn")
 palette(brewer.pal(n = 4, name = "PRGn"))
@@ -22,17 +25,26 @@ x2 <-mvrnorm(n, mu = mu2, Sigma = Sigma2 )
 data2 <-  data.frame(x = x2[,1], y = x2[,2], group="B")
 
 
-
 data <- rbind(data1,data2)
 
 ggplot(data, aes(x=x, y=y,colour=group)) + geom_point(size=1.5, alpha=.6) 
 
 
 x_clustered_db <- dbscan(data.matrix(data), eps = 0.2, minPts = 10)
+dominant_classes_idx <- which(x_clustered_db$cluster %in% c(0,1))
+dominant_db <- data.frame(class = as.factor(x_clustered_db$cluster[dominant_classes_idx]),
+                          x = data$x[dominant_classes_idx], y = data$y[dominant_classes_idx])
 
-ggplot(data,aes(x=x, y = y,colour = x_clustered_db$cluster))  + geom_point(size=1.5, alpha=1) 
+
+ggplot(dominant_db,aes(x=x, y = y,colour = class))  +
+  geom_point(size=1.5, alpha=1) +
+  ggtitle("DBscan results") +
+  theme(plot.title = element_text(hjust = 0.5))
 
 
 x_clustered_kmeans <- kmeans(data.matrix(data),2)
-ggplot(data,aes(x=x, y = y,colour = x_clustered_kmeans$cluster))  + geom_point(size=1.5, alpha=1) 
+ggplot(data,aes(x=x, y = y,colour = as.factor(x_clustered_kmeans$cluster)))  +
+  labs(colour = "class") +
+  geom_point(size=1.5, alpha=1) +
+  theme(legend.text = element_text(face = "bold"))
 
